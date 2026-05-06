@@ -26,7 +26,12 @@ import {
   searchFreesound,
 } from '@pages/popup/freesound'
 
-const extensionIdentifierUrl = chrome.runtime.getURL('')
+type SelectedAudio = {
+  cardId: string
+  src: string
+  name?: string
+  updatedAt: number
+}
 
 type CardConfig = {
   cardId: string
@@ -60,13 +65,42 @@ const Popup = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
-    const savedAudio = localStorage.getItem('selectedAudioUrl')
-    if (savedAudio) setSelectedAudioId(savedAudio)
+    chrome.storage?.local.get(['selectedAudio', 'customAudios'], (result) => {
+      const customs = Array.isArray(result.customAudios)
+        ? (result.customAudios as CustomAudio[])
+        : []
+      if (customs.length) setCustomAudios(customs)
 
-    chrome.storage?.local.get(['customAudios'], (result) => {
-      if (Array.isArray(result.customAudios)) {
-        setCustomAudios(result.customAudios as CustomAudio[])
+      const stored = result.selectedAudio as SelectedAudio | undefined
+      if (stored?.cardId) {
+        setSelectedAudioId(stored.cardId)
+        return
       }
+
+      // One-time migration from the legacy `localStorage.selectedAudioUrl`
+      // key to chrome.storage.local so the content script can read the
+      // selection on its own.
+      const legacy = localStorage.getItem('selectedAudioUrl')
+      if (!legacy) return
+      setSelectedAudioId(legacy)
+
+      let migrated: SelectedAudio | null = null
+      if (legacy.startsWith('custom:')) {
+        const id = legacy.slice('custom:'.length)
+        const item = customs.find((c) => c.id === id)
+        if (item) {
+          migrated = {
+            cardId: legacy,
+            src: item.dataUrl,
+            name: item.displayName,
+            updatedAt: Date.now(),
+          }
+        }
+      } else if (legacy) {
+        migrated = { cardId: legacy, src: legacy, updatedAt: Date.now() }
+      }
+      if (migrated) chrome.storage?.local.set({ selectedAudio: migrated })
+      localStorage.removeItem('selectedAudioUrl')
     })
 
     const checkIsWhatsAppWeb = async () => {
@@ -131,25 +165,33 @@ const Popup = () => {
     chrome.storage?.local.set({ customAudios: next })
   }
 
-  const sendApply = (audioPayload: string) => {
-    sendMessageToContentScript(openTabId, {
-      type: 'updateCachedAudio',
-      extensionIdentifierUrl: extensionIdentifierUrl,
-      selectedAudioUrl: audioPayload,
-    })
+  const persistSelection = (selected: SelectedAudio) => {
+    chrome.storage?.local.set({ selectedAudio: selected })
+    // Trigger an immediate apply on the content script. The content script
+    // also re-applies on storage change + on SW updates, so this message
+    // is just for low-latency feedback when the popup is the trigger.
+    sendMessageToContentScript(openTabId, { type: 'applySelectedAudio' })
   }
 
   const handleSelectBuiltIn = (audio: BuiltInAudio) => {
     setSelectedAudioId(audio.fileUrl)
-    sendApply(audio.fileUrl)
-    localStorage.setItem('selectedAudioUrl', audio.fileUrl)
+    persistSelection({
+      cardId: audio.fileUrl,
+      src: audio.fileUrl,
+      name: audio.displayName,
+      updatedAt: Date.now(),
+    })
   }
 
   const handleSelectCustom = (custom: CustomAudio) => {
     const cardId = customCardId(custom)
     setSelectedAudioId(cardId)
-    sendApply(custom.dataUrl)
-    localStorage.setItem('selectedAudioUrl', cardId)
+    persistSelection({
+      cardId,
+      src: custom.dataUrl,
+      name: custom.displayName,
+      updatedAt: Date.now(),
+    })
   }
 
   const handlePlay = (id: string, source: string) => {
@@ -192,7 +234,7 @@ const Popup = () => {
     persistCustomAudios(customAudios.filter((c) => c.id !== id))
     if (selectedAudioId === customCardId({ id })) {
       setSelectedAudioId('')
-      localStorage.removeItem('selectedAudioUrl')
+      chrome.storage?.local.remove(['selectedAudio'])
     }
   }
 
@@ -215,8 +257,12 @@ const Popup = () => {
       // Auto-select the freshly added clip so a single click is enough.
       const cardId = customCardId(item)
       setSelectedAudioId(cardId)
-      sendApply(item.dataUrl)
-      localStorage.setItem('selectedAudioUrl', cardId)
+      persistSelection({
+        cardId,
+        src: item.dataUrl,
+        name: item.displayName,
+        updatedAt: Date.now(),
+      })
     } catch (err) {
       setSearchError(
         (err as Error).message || 'Could not add that sound. Try again.'

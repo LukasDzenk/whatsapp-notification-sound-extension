@@ -1,71 +1,133 @@
-import { resolveAudioSource } from './audioSource'
+import { useEffect } from 'react'
+import {
+  ApplyResult,
+  SelectedAudio,
+  fetchSelectedAudioBlob,
+  replaceInWaCaches,
+  waitForWaCache,
+} from './applyCache'
 
-export default function App() {
-  let extensionIdentifierUrl: string
+const extensionUrl = chrome.runtime.getURL('')
 
-  const updateCachedAudio = async (selectedAudioUrl: string) => {
-    // Get the cache name which has the notification audio asset
-    const cacheNames = await caches.keys()
-    // Find the cache that contains the asset
-    // This is done because cache name is always changing
-    const cacheName = cacheNames.find((name) => {
-      const regex = /wa\d{1}\./
-      return regex.test(name)
+// In-memory cache of the most recently fetched audio bytes, keyed by the
+// `selectedAudio.src` they came from. Lets repeated applies (e.g. on SW
+// reactivation) skip refetching.
+let cachedSrc: string | null = null
+let cachedBlob: Blob | null = null
+
+const readSelectedAudio = (): Promise<SelectedAudio | null> =>
+  new Promise((resolve) => {
+    chrome.storage.local.get(['selectedAudio'], (result) => {
+      const stored = (result as { selectedAudio?: SelectedAudio }).selectedAudio
+      resolve(stored ?? null)
     })
-
-    // Open the cache that contains the audio asset
-    const cache = await caches.open(cacheName)
-
-    // Get the notification audio asset URL
-    const cacheAssets = await caches.open(cacheName)
-    const assets = await cacheAssets.keys()
-    // Find the asset that we want to update
-    const asset = assets.find((asset) => {
-      const regex = /notification_.+\.mp3/
-      return regex.test(asset.url)
-    })
-    // Sometimes Whatsapp fails to cache an audio asset in the first place
-    // thus leaving the asset.url undefined. In that case, fallback to
-    // hardcoded URL
-    const assetUrl =
-      asset?.url ||
-      'https://web.whatsapp.com/notification_2a485d84012c106acef03b527bb54635.mp3'
-
-    const sourceUrl = resolveAudioSource(
-      extensionIdentifierUrl,
-      selectedAudioUrl
-    )
-
-    const extensionAudioResponse = await fetch(sourceUrl)
-
-    const body = extensionAudioResponse.body
-
-    // Create a new mock response with the updated audio
-    // to replace the old one in the cache
-    const newResponse = new Response(body)
-
-    // Update cache with the new audio
-    await cache.delete(assetUrl)
-
-    if (selectedAudioUrl) {
-      await cache.put(assetUrl, newResponse)
-    }
-  }
-
-  // Listen to messages from the popup.tsx
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('message received. message type: ', request.type)
-    if (request.type === 'updateCachedAudio') {
-      extensionIdentifierUrl = request.extensionIdentifierUrl
-      updateCachedAudio(request.selectedAudioUrl)
-      sendResponse({ type: 'updateCachedAudioDone' })
-    } else if (request.type === 'checkIfWhatsAppWeb') {
-      const isWhatsAppWeb = window.location.href.includes('web.whatsapp.com')
-      sendResponse({ isWhatsAppWeb: isWhatsAppWeb })
-    }
-
-    return true // Needed to ensure that the connection is not closed prematurely
   })
 
-  return <></> // must return something, otherwise it will throw an error
+const applySelectedAudio = async (): Promise<ApplyResult> => {
+  const selected = await readSelectedAudio()
+  if (!selected) return { success: false, replaced: 0, reason: 'no-selection' }
+
+  const ready = await waitForWaCache()
+  if (!ready) return { success: false, replaced: 0, reason: 'no-wa-cache' }
+
+  let blob = cachedBlob
+  if (!blob || cachedSrc !== selected.src) {
+    blob = await fetchSelectedAudioBlob(selected, extensionUrl)
+    if (!blob) return { success: false, replaced: 0, reason: 'fetch-failed' }
+    cachedBlob = blob
+    cachedSrc = selected.src
+  }
+
+  return replaceInWaCaches(blob)
+}
+
+const invalidateCachedBlob = () => {
+  cachedSrc = null
+  cachedBlob = null
+}
+
+export default function App() {
+  useEffect(() => {
+    let cancelled = false
+
+    // Initial application — re-applies whatever the user picked previously
+    // without needing them to re-open the popup.
+    applySelectedAudio().then((result) => {
+      if (cancelled) return
+      if (result.success) {
+        console.log(
+          `[WhatSound] applied selection (${result.replaced} cache entries)`
+        )
+      } else if (result.reason !== 'no-selection') {
+        console.log('[WhatSound] initial apply skipped:', result.reason)
+      }
+    })
+
+    const onStorageChange = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      areaName: string
+    ) => {
+      if (areaName !== 'local' || !changes.selectedAudio) return
+      invalidateCachedBlob()
+      applySelectedAudio()
+    }
+    chrome.storage.onChanged.addListener(onStorageChange)
+
+    // WhatsApp ships SW updates that rebuild caches under fresh names —
+    // re-apply once the new SW takes control.
+    const onControllerChange = () => {
+      window.setTimeout(() => applySelectedAudio(), 1500)
+    }
+    if (
+      typeof navigator !== 'undefined' &&
+      navigator.serviceWorker
+    ) {
+      navigator.serviceWorker.addEventListener(
+        'controllerchange',
+        onControllerChange
+      )
+    }
+
+    const onMessage = (
+      request: { type?: string },
+      _sender: chrome.runtime.MessageSender,
+      sendResponse: (response: unknown) => void
+    ) => {
+      if (request?.type === 'checkIfWhatsAppWeb') {
+        sendResponse({
+          isWhatsAppWeb: window.location.href.includes('web.whatsapp.com'),
+        })
+        return true
+      }
+
+      if (
+        request?.type === 'applySelectedAudio' ||
+        // legacy alias retained so older builds still work
+        request?.type === 'updateCachedAudio'
+      ) {
+        applySelectedAudio().then((result) => sendResponse(result))
+        return true
+      }
+
+      return false
+    }
+    chrome.runtime.onMessage.addListener(onMessage)
+
+    return () => {
+      cancelled = true
+      chrome.storage.onChanged.removeListener(onStorageChange)
+      chrome.runtime.onMessage.removeListener(onMessage)
+      if (
+        typeof navigator !== 'undefined' &&
+        navigator.serviceWorker
+      ) {
+        navigator.serviceWorker.removeEventListener(
+          'controllerchange',
+          onControllerChange
+        )
+      }
+    }
+  }, [])
+
+  return <></>
 }

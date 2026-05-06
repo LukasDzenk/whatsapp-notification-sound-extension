@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WhatSound - Change WhatsApp message sound",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "WhatSound - Change WhatsApp Web notification sound",
   "action": {
     "default_popup": "src/pages/popup/index.html",

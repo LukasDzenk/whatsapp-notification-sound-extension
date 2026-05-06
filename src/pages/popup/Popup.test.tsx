@@ -49,7 +49,9 @@ const installChromeMock = ({ isWhatsAppWeb = true }: ChromeMockOptions = {}) => 
             cb({ customAudios: [] })
         ),
         set: jest.fn(),
+        remove: jest.fn(),
       },
+      onChanged: { addListener: jest.fn(), removeListener: jest.fn() },
     },
   }
 }
@@ -94,10 +96,33 @@ describe('Popup', () => {
     expect(screen.queryByText('Pop')).toBeNull()
   })
 
-  test('clicking a sound card sends an updateCachedAudio message to the content script', async () => {
+  test('clicking a sound card writes the selection to chrome.storage.local', async () => {
     await renderPopup()
 
-    // Each sound card is itself a button labelled by the sound name.
+    fireEvent.click(screen.getByRole('button', { name: /^pop$/i }))
+
+    await waitFor(() => {
+      const storageSet = (
+        global as unknown as {
+          chrome: { storage: { local: { set: jest.Mock } } }
+        }
+      ).chrome.storage.local.set
+      const writeCall = storageSet.mock.calls.find(
+        (c) => c[0] && 'selectedAudio' in c[0]
+      )
+      expect(writeCall).toBeTruthy()
+      expect(writeCall[0].selectedAudio).toMatchObject({
+        cardId: expect.any(String),
+        src: expect.any(String),
+        name: 'Pop',
+        updatedAt: expect.any(Number),
+      })
+    })
+  })
+
+  test('clicking a sound card sends an applySelectedAudio message', async () => {
+    await renderPopup()
+
     fireEvent.click(screen.getByRole('button', { name: /^pop$/i }))
 
     await waitFor(() => {
@@ -106,15 +131,10 @@ describe('Popup', () => {
           chrome: { tabs: { sendMessage: jest.Mock } }
         }
       ).chrome.tabs.sendMessage
-      const updateCall = sendMessage.mock.calls.find(
-        (c) => c[1]?.type === 'updateCachedAudio'
+      const applyCall = sendMessage.mock.calls.find(
+        (c) => c[1]?.type === 'applySelectedAudio'
       )
-      expect(updateCall).toBeTruthy()
-      expect(updateCall[1]).toMatchObject({
-        type: 'updateCachedAudio',
-        selectedAudioUrl: expect.any(String),
-        extensionIdentifierUrl: expect.any(String),
-      })
+      expect(applyCall).toBeTruthy()
     })
   })
 
