@@ -87,6 +87,15 @@ export default {
     '^@pages(.*)$': '<rootDir>/src/pages$1',
   },
 
+  // ts-jest preset handles `.ts`/`.tsx`. We additionally stub static asset and
+  // stylesheet imports so they resolve to a unique string (the source path)
+  // instead of a shared mock value.
+  transform: {
+    '^.+\\.tsx?$': 'ts-jest',
+    '\\.(mp3|wav|ogg|png|jpe?g|gif|svg|webp|css|scss|sass)$':
+      '<rootDir>/test-utils/assetTransform.cjs',
+  },
+
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
   // modulePathIgnorePatterns: [],
 

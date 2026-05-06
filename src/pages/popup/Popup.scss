@@ -1,25 +1,48 @@
-// Create outline variable
-$outline: 0.1rem solid #1f343e;
-$outline-soft: 0.05rem solid #1f343e;
-$border-radius: 10px;
-$transition: all 0.25s ease-in-out;
-$shadow: 0 0 6px 0 rgba(0, 0, 0, 0.1);
+// ---- Tokens ----------------------------------------------------------------
+$ink: #1a1a1a;
+$pink: #ffd4e5;
+$pink-soft: #ffe6f0;
 $green: #7fae71;
-$font: 'Roboto', 'VT323', sans-serif;
+$green-dark: #5a8d4d;
+$yellow: #fff6ce;
+$purple: #907fcd;
+$cream: #fff8ee;
+$white: #ffffff;
+$muted: #6b6b6b;
 
-// Extendable hover
-@mixin hover {
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 3px 3px 4px #b5b5b5;
-    background-color: #ffa5a5;
-    color: #2e2e2e;
-    cursor: pointer;
+$radius: 12px;
+$radius-sm: 8px;
+$border: 2px solid $ink;
+$border-thin: 1.5px solid $ink;
+$shadow: 4px 4px 0 $ink;
+$shadow-sm: 2px 2px 0 $ink;
+$transition: transform 0.12s ease, box-shadow 0.12s ease,
+  background-color 0.18s ease, color 0.18s ease;
+
+// ---- Mixins ----------------------------------------------------------------
+@mixin lift {
+  &:hover:not(:disabled) {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 $ink;
+  }
+  &:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 $ink;
   }
 }
 
+* {
+  box-sizing: border-box;
+}
+
+// ---- Layout ----------------------------------------------------------------
 body {
-  width: 300px;
+  width: 320px;
+  margin: 0;
+  background: $pink;
+  color: $ink;
+  font-family: 'Roboto', 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
 }
 
 body,
@@ -30,286 +53,460 @@ html {
 }
 
 .App {
-  top: 0px;
-  bottom: 0px;
-  left: 0px;
-  right: 0px;
-  text-align: center;
-  height: 100%;
-  margin: 0;
-  padding: 1.5rem 0.9rem 0.5rem 0.9rem;
+  padding: 16px 14px 12px;
+
+  &__header {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+
+  &__logo {
+    height: 96px;
+    border-radius: $radius;
+    border: $border;
+    box-shadow: $shadow;
+    background: $pink-soft;
+    transition: $transition;
+    cursor: pointer;
+    @include lift;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 18px;
+  }
 }
 
-.App-logo {
-  height: 100px;
-  cursor: pointer;
-  padding: 0px;
-  outline: $outline;
-  border-radius: $border-radius;
-  transition: $transition;
-  // Add hover mixin
-  @include hover;
+// ---- Intro / Steps ---------------------------------------------------------
+.intro {
+  margin-bottom: 14px;
 }
 
-/* custom CSS */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 6px;
 
-#titleInstructions {
-  text-align: left;
-  font-size: 1rem;
-  font-weight: 700;
-  margin-top: 1.5rem;
-  margin-bottom: 1.2rem;
+  li {
+    background: $white;
+    border: $border;
+    border-radius: $radius-sm;
+    box-shadow: $shadow-sm;
+    padding: 8px 4px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__num {
+    width: 22px;
+    height: 22px;
+    background: $green;
+    color: $white;
+    border: $border-thin;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  &__label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.15;
+  }
 }
 
-#instructions {
-  margin: 2.5rem 0 2.5rem 0;
-}
-
-li {
-  margin-bottom: 0.25rem;
-}
-
-#reset-audio-tip {
-  font-size: 0.6rem;
-  color: #646464;
+.reset-tip {
+  font-size: 0.65rem;
   font-style: italic;
-  margin-top: 0.2rem;
-  margin-bottom: 0.2rem;
+  color: $muted;
+  text-align: center;
+  margin: 8px 0 0;
 }
 
-#get-in-touch {
-  text-decoration: none;
-  color: #000000;
+// ---- Tabs ------------------------------------------------------------------
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.tab {
+  flex: 0 0 auto;
+  font-family: inherit;
   font-size: 0.7rem;
-  font-style: italic;
-  margin-top: 4rem;
-  margin-bottom: 0.6rem;
-  // outline: $outline;
-  // @include hover;
-  // transition: $transition;
-}
-
-#get-in-touch:hover {
-  color: #000000;
-  text-decoration: underline;
-}
-
-.audio-container {
-  background-color: white;
-  box-shadow: 5px 5px 5px #aaaaaa;
-  border-radius: $border-radius;
-  margin: 0.75rem 0 0.75rem 0;
-  padding: 0.5rem;
-  outline: $outline;
-}
-
-/* selected div style */
-h2 {
-  font-size: 0.9rem;
-  padding: 0.25rem;
-  margin: 0;
-  font-family: $font;
-}
-
-.button {
-  display: inline-block;
-  padding: 0.1rem;
-  padding: 0.25rem;
-  width: 50%;
-  background-color: #fff6ce;
-  border: none;
-  outline: $outline-soft;
-  color: #2e2e2e;
-  font-size: 0.9rem;
-  font-weight: bold;
+  font-weight: 700;
   text-transform: uppercase;
-  text-align: center;
-  text-decoration: none;
-}
-
-.button-left {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  border-right: 1px solid #bbb9b9;
-}
-
-.button-right {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-.button:hover {
-  transform: translateY(-1px);
-  box-shadow: 3px 3px 4px #b5b5b5;
-  background-color: #cdffa5;
-  color: #2e2e2e;
+  letter-spacing: 0.04em;
+  border: $border-thin;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: $white;
+  color: $ink;
+  box-shadow: $shadow-sm;
   cursor: pointer;
+  transition: $transition;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+
+  &:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 $ink;
+  }
+
+  &.is-active {
+    background: $ink;
+    color: $yellow;
+  }
+
+  &__emoji {
+    font-size: 0.85rem;
+  }
 }
 
-.button:active,
-.selected {
-  background-color: #907fcd;
-  color: #fff;
+// ---- Sound cards -----------------------------------------------------------
+.sound-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-// .button:active,
-// .selected {
-//   position: relative;
-// }
+.sound-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: $white;
+  border: $border;
+  border-radius: $radius;
+  box-shadow: $shadow;
+  padding: 10px 12px;
+  transition: $transition;
 
-// .button:active,
-// .selected::before,
-// .button:active,
-// .selected::after {
-//   content: '';
-//   position: absolute;
-//   top: -0.4rem;
-//   left: -0.35rem;
-//   right: -0.35rem;
-//   bottom: -0.4rem;
-//   border: 6px solid #94db7e;
-//   transition: all 0.5s;
-//   animation: clippath 3s infinite linear;
-//   border-radius: $border-radius;
-// }
+  &:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 $ink;
+  }
 
-// .button:active,
-// .selected::after {
-//   animation: clippath 3s infinite -1.5s linear;
-// }
+  &.is-selected {
+    background: $green;
+    color: $white;
 
-// @keyframes clippath {
+    .sound-card__name {
+      color: $white;
+    }
+    .sound-card__bars i {
+      background: $white;
+    }
+    .sound-card__badge {
+      background: $ink;
+      color: $yellow;
+    }
+  }
 
-//   0%,
-//   100% {
-//     clip-path: inset(0 0 94% 0);
-//   }
+  &.is-playing {
+    background: $yellow;
+  }
 
-//   25% {
-//     clip-path: inset(0 94% 0 0);
-//   }
+  &__main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
 
-//   50% {
-//     clip-path: inset(94% 0 0 0);
-//   }
+  &__emoji {
+    font-size: 1.3rem;
+    line-height: 1;
+  }
 
-//   75% {
-//     clip-path: inset(0 0 0 94%);
-//   }
-// }
+  &__name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-// ========================================================
-// CUSTOM SCROLLBAR
-// ========================================================
+  &__badge {
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    background: $ink;
+    color: $yellow;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
 
-/* Reset default scrollbar style */
+  &__actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  &__bars {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 14px;
+
+    i {
+      display: inline-block;
+      width: 3px;
+      height: 6px;
+      background: $ink;
+      border-radius: 1px;
+      animation: bars 0.9s ease-in-out infinite;
+    }
+
+    i:nth-child(1) {
+      animation-delay: 0s;
+    }
+    i:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+    i:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+    i:nth-child(4) {
+      animation-delay: 0.45s;
+    }
+  }
+}
+
+@keyframes bars {
+  0%,
+  100% {
+    height: 4px;
+  }
+  50% {
+    height: 14px;
+  }
+}
+
+// ---- Buttons ---------------------------------------------------------------
+.btn {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.72rem;
+  border: $border-thin;
+  border-radius: $radius-sm;
+  padding: 6px 10px;
+  cursor: pointer;
+  background: $white;
+  color: $ink;
+  box-shadow: $shadow-sm;
+  transition: $transition;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  @include lift;
+
+  &:disabled {
+    cursor: default;
+    opacity: 1;
+  }
+
+  &--play {
+    background: $yellow;
+    width: 36px;
+    padding: 6px 0;
+    font-size: 0.8rem;
+  }
+
+  &--select {
+    background: $purple;
+    color: $white;
+    min-width: 72px;
+  }
+
+  &--select.is-active {
+    background: $ink;
+    color: $green;
+  }
+
+  &--icon {
+    background: $white;
+    width: 28px;
+    padding: 4px 0;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+}
+
+// ---- Upload card / Custom tab ----------------------------------------------
+.upload-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: $yellow;
+  border: $border;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 10px 12px;
+  gap: 10px;
+
+  &__main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__icon {
+    width: 32px;
+    height: 32px;
+    border: $border-thin;
+    border-radius: 8px;
+    background: $white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  strong {
+    font-size: 0.9rem;
+    display: block;
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 0.7rem;
+    color: $muted;
+  }
+}
+
+.upload-error {
+  background: #ffd3d3;
+  border: $border-thin;
+  border-radius: $radius-sm;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #800;
+}
+
+.empty-msg {
+  text-align: center;
+  font-size: 0.8rem;
+  color: $muted;
+  padding: 16px 8px;
+  font-style: italic;
+}
+
+// Reuse btn--accent for the file picker
+.btn--accent {
+  background: $yellow;
+  color: $ink;
+}
+
+// ---- Empty / Not-on-whatsapp state -----------------------------------------
+.not-on-whatsapp {
+  text-align: center;
+  background: $white;
+  border: $border;
+  border-radius: $radius;
+  box-shadow: $shadow;
+  padding: 22px 16px;
+  margin: 18px 0;
+
+  &__emoji {
+    font-size: 2.4rem;
+    margin-bottom: 6px;
+  }
+
+  h2 {
+    font-size: 0.95rem;
+    margin: 4px 0;
+  }
+
+  p {
+    font-size: 0.78rem;
+    color: $muted;
+    margin: 6px 0 0;
+    line-height: 1.4;
+  }
+
+  code {
+    background: $yellow;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    border: $border-thin;
+  }
+}
+
+// ---- Footer ----------------------------------------------------------------
+.footer-link {
+  display: inline-block;
+  background: $white;
+  border: $border-thin;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: $ink;
+  text-decoration: none;
+  box-shadow: $shadow-sm;
+  transition: $transition;
+  @include lift;
+}
+
+// ---- Custom scrollbar ------------------------------------------------------
 * {
   &::-webkit-scrollbar {
     width: 12px;
     background-color: transparent;
   }
-
   &::-webkit-scrollbar-thumb {
     background-color: transparent;
     border: none;
   }
-
   &::-webkit-scrollbar-track {
     background-color: transparent;
     border: none;
   }
 }
 
-/* Brutalist design scrollbar */
 .brutalist-scrollbar {
   &::-webkit-scrollbar {
-    width: 16px;
-    background-color: #f0f0f0;
+    width: 12px;
+    background-color: $pink;
   }
-
   &::-webkit-scrollbar-thumb {
-    background-color: #333;
-    border: 3px solid #f0f0f0;
+    background-color: $ink;
+    border: 3px solid $pink;
     border-radius: 0;
   }
-
   &::-webkit-scrollbar-track {
-    background-color: #f0f0f0;
-    border-left: 1px solid #333;
+    background-color: $pink;
+    border-left: 1px solid $ink;
   }
-}
-
-// ========================================================
-// CUSTOM INPUT TYPE RANGE FOR VOLUME
-// ========================================================
-.button-volume {
-  width: 100%;
-  background-color: #907fcd;
-
-  input[type='range'] {
-    background: transparent;
-    width: 100%;
-    height: 28px;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    outline: none;
-    border: 0;
-    padding: 0 8px;
-
-    @mixin track {
-      background: #fff; /*trackColor*/
-      height: 4px; /*trackHeight*/
-      border-radius: 4px; /*trackHeight*/
-      transition: 0.3s;
-    }
-
-    @mixin thumb {
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-      background: #fff;
-      width: 15px;
-      height: 15px;
-      margin-top: -6px;
-      cursor: pointer;
-      transition: 0.3s;
-      border: none;
-      border-radius: 0;
-      box-shadow: 5px 5px 0 #020406;
-    }
-
-    &::-webkit-slider-runnable-track {
-      @include track;
-    }
-    &::-webkit-slider-thumb {
-      @include thumb;
-    }
-
-    &::-moz-range-track {
-      @include track;
-    }
-    &::-moz-range-thumb {
-      @include thumb;
-    }
-
-    &::-ms-track {
-      @include track;
-    }
-    &::-ms-thumb {
-      @include thumb;
-    }
-  }
-}
-
-.button-volume input[type='range'] {
-  background: transparent;
-  width: 100%;
-  height: 28px;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  outline: none;
-  border: 0;
-  padding: 0 8px;
 }

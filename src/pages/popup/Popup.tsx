@@ -1,14 +1,3 @@
-// Audio files
-import guitarAlertUrl from '@assets/audio/mixkit-guitar-notification-alert-2320.wav'
-import popAlertAudioUrl from '@assets/audio/mixkit-message-pop-alert-2354.mp3'
-import positiveAlertUrl from '@assets/audio/mixkit-positive-notification-951.wav'
-import startAlertUrl from '@assets/audio/mixkit-software-interface-start-2574.wav'
-import clop_1 from '@assets/audio/1.mp3'
-import bloop_2 from '@assets/audio/2.mp3'
-import ding_ding_3 from '@assets/audio/3.mp3'
-import some_notification_4 from '@assets/audio/4.mp3'
-import harp_5 from '@assets/audio/5.mp3'
-
 // Images
 import logo from '@assets/img/whatsound_logo.png'
 
@@ -16,193 +5,369 @@ import logo from '@assets/img/whatsound_logo.png'
 import '@pages/popup/Popup.scss'
 
 // Other
-import { useEffect, useState } from 'react'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
+import {
+  BuiltInAudio,
+  CustomAudio,
+  LibraryTab,
+  TABS,
+  buildCustomAudio,
+  builtInAudios,
+  customCardId,
+  filterBuiltIns,
+  validateUpload,
+} from '@pages/popup/audioLibrary'
 
-// Get unique extension string (URL)
 const extensionIdentifierUrl = chrome.runtime.getURL('')
 
-const audioFilesMapping = [
-  { displayName: 'Pop', fileUrl: popAlertAudioUrl },
-  {
-    displayName: 'Chill guitar',
-    fileUrl: guitarAlertUrl,
-  },
-  {
-    displayName: 'Positive',
-    fileUrl: positiveAlertUrl,
-  },
-  {
-    displayName: 'Start',
-    fileUrl: startAlertUrl,
-  },
-  {
-    displayName: 'Clop',
-    fileUrl: clop_1,
-  },
-  {
-    displayName: 'Bloop',
-    fileUrl: bloop_2,
-  },
-  {
-    displayName: 'Ding ding',
-    fileUrl: ding_ding_3,
-  },
-  {
-    displayName: 'Some notification',
-    fileUrl: some_notification_4,
-  },
-  {
-    displayName: 'Harp',
-    fileUrl: harp_5,
-  },
-]
-
 const Popup = () => {
-  // Check if the extension is opened within WhatsApp web tab.
-  // (otherwise, it will not work)
   const [openTabId, setOpenTabId] = useState(0)
   const [isWhatsAppWeb, setIsWhatsAppWeb] = useState(false)
+  const [selectedAudioId, setSelectedAudioId] = useState('')
+  const [playingId, setPlayingId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<LibraryTab>('top')
+  const [customAudios, setCustomAudios] = useState<CustomAudio[]>([])
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
-  // Get and set tab to send message to
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
   useEffect(() => {
     const savedAudio = localStorage.getItem('selectedAudioUrl')
-    if (savedAudio) {
-      setSelectedAudioUrl(savedAudio)
-    }
+    if (savedAudio) setSelectedAudioId(savedAudio)
+
+    chrome.storage?.local.get(['customAudios'], (result) => {
+      if (Array.isArray(result.customAudios)) {
+        setCustomAudios(result.customAudios as CustomAudio[])
+      }
+    })
 
     const checkIsWhatsAppWeb = async () => {
-      // Get tab to send message to
-      const openTabs = await new Promise((resolve) => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const openTabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) =>
           resolve(tabs)
+        )
+      })
+      const tabId = openTabs[0]?.id ?? 0
+      setOpenTabId(tabId)
+
+      try {
+        const response = await sendMessageToContentScript(tabId, {
+          type: 'checkIfWhatsAppWeb',
         })
-      })
-      setOpenTabId(openTabs[0].id)
-
-      const response = await sendMessageToContentScript(openTabs[0].id, {
-        type: 'checkIfWhatsAppWeb',
-      })
-
-      if (response.isWhatsAppWeb) {
-        setIsWhatsAppWeb(true)
-      } else {
+        setIsWhatsAppWeb(Boolean(response?.isWhatsAppWeb))
+      } catch {
         setIsWhatsAppWeb(false)
       }
     }
     checkIsWhatsAppWeb()
   }, [])
 
-  // Display currently selected audio
-  const [selectedAudioUrl, setSelectedAudioUrl] = useState('')
+  const persistCustomAudios = (next: CustomAudio[]) => {
+    setCustomAudios(next)
+    chrome.storage?.local.set({ customAudios: next })
+  }
 
-  const handleSelectAudio = async (audioUrl: string) => {
-    // Set audio for the current page view
-    setSelectedAudioUrl(audioUrl)
-    // Update cached audio
+  const sendApply = (audioPayload: string) => {
     sendMessageToContentScript(openTabId, {
       type: 'updateCachedAudio',
       extensionIdentifierUrl: extensionIdentifierUrl,
-      selectedAudioUrl: audioUrl,
+      selectedAudioUrl: audioPayload,
     })
-    localStorage.setItem('selectedAudioUrl', audioUrl)
   }
 
-  const handlePlayAudio = (audioUrl: string) => {
-    const audioElement = new Audio(audioUrl)
-    audioElement.play()
+  const handleSelectBuiltIn = (audio: BuiltInAudio) => {
+    setSelectedAudioId(audio.fileUrl)
+    sendApply(audio.fileUrl)
+    localStorage.setItem('selectedAudioUrl', audio.fileUrl)
   }
 
-  // TODO - Add upload audio feature
-  // CLick button to upload mp3 to local extension directory
-  // const handleUploadAudio = async (e) => {
-  //   const file = e.target.files[0];
-  //   const reader = new FileReader();
-  //   reader.onload = async (e) => {
-  //     const audio = e.target.result;
-  //     await updateCachedAudio(audio);
-  //   };
+  const handleSelectCustom = (custom: CustomAudio) => {
+    const cardId = customCardId(custom)
+    setSelectedAudioId(cardId)
+    sendApply(custom.dataUrl)
+    localStorage.setItem('selectedAudioUrl', cardId)
+  }
 
-  const renderAudioButtons = () => {
-    return audioFilesMapping.map((audio) => (
-      <div
-        key={audio.fileUrl}
-        className={`audio-container ${
-          selectedAudioUrl === audio.fileUrl ? 'selected' : ''
-        }`}
-      >
-        <h2>{audio.displayName} &#9835;</h2>
+  const handlePlay = (id: string, source: string) => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+    const audio = new Audio(source)
+    audioRef.current = audio
+    setPlayingId(id)
+    audio.addEventListener('ended', () => {
+      setPlayingId((current) => (current === id ? null : current))
+    })
+    audio.play().catch(() => setPlayingId(null))
+  }
+
+  const handleUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    setUploadError(null)
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-selecting the same file
+    if (!file) return
+
+    const error = validateUpload(file)
+    if (error) {
+      setUploadError(error)
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '')
+      const item = buildCustomAudio(file, dataUrl)
+      persistCustomAudios([item, ...customAudios])
+    }
+    reader.onerror = () => setUploadError('Could not read that file.')
+    reader.readAsDataURL(file)
+  }
+
+  const handleDeleteCustom = (id: string) => {
+    persistCustomAudios(customAudios.filter((c) => c.id !== id))
+    if (selectedAudioId === customCardId({ id })) {
+      setSelectedAudioId('')
+      localStorage.removeItem('selectedAudioUrl')
+    }
+  }
+
+  const visibleBuiltIns = filterBuiltIns(builtInAudios, activeTab)
+
+  const renderTabs = () => (
+    <nav className="tabs" aria-label="Sound categories">
+      {TABS.map((tab) => (
         <button
-          className="button button-left"
-          onClick={() => handlePlayAudio(audio.fileUrl)}
+          key={tab.id}
+          type="button"
+          className={`tab ${activeTab === tab.id ? 'is-active' : ''}`}
+          onClick={() => setActiveTab(tab.id)}
         >
-          Play
+          <span className="tab__emoji" aria-hidden="true">
+            {tab.emoji}
+          </span>
+          <span className="tab__label">{tab.label}</span>
         </button>
-        {selectedAudioUrl !== audio.fileUrl && (
+      ))}
+    </nav>
+  )
+
+  const cardClass = (isSelected: boolean, isPlaying: boolean) =>
+    ['sound-card', isSelected && 'is-selected', isPlaying && 'is-playing']
+      .filter(Boolean)
+      .join(' ')
+
+  const renderBuiltInCard = (audio: BuiltInAudio) => {
+    const isSelected = selectedAudioId === audio.fileUrl
+    const isPlaying = playingId === audio.fileUrl
+    return (
+      <li key={audio.fileUrl} className={cardClass(isSelected, isPlaying)}>
+        <div className="sound-card__main">
+          <span className="sound-card__emoji" aria-hidden="true">
+            {audio.emoji}
+          </span>
+          <span className="sound-card__name">{audio.displayName}</span>
+          {isPlaying ? (
+            <span className="sound-card__bars" aria-hidden="true">
+              <i></i>
+              <i></i>
+              <i></i>
+              <i></i>
+            </span>
+          ) : isSelected ? (
+            <span className="sound-card__badge">PICKED</span>
+          ) : null}
+        </div>
+        <div className="sound-card__actions">
           <button
-            className="button button-right"
-            onClick={() => handleSelectAudio(audio.fileUrl)}
+            type="button"
+            className="btn btn--play"
+            onClick={() => handlePlay(audio.fileUrl, audio.fileUrl)}
+            aria-label={`Preview ${audio.displayName}`}
+            title="Preview"
           >
-            Select
+            ▶
           </button>
-        )}
-      </div>
-    ))
-  }
-
-  const renderInstructions = () => {
-    return (
-      <div id="instructions">
-        <h2>Please go to WhatsApp Web page to change the settings!</h2>
-        <p>
-          <i>
-            (or <u>refresh</u> the page if you are already there)
-          </i>
-        </p>
-      </div>
+          <button
+            type="button"
+            className={`btn btn--select ${isSelected ? 'is-active' : ''}`}
+            onClick={() => handleSelectBuiltIn(audio)}
+            disabled={isSelected}
+          >
+            {isSelected ? '✓ Picked' : 'Pick'}
+          </button>
+        </div>
+      </li>
     )
   }
 
-  const renderIntro = () => {
+  const renderCustomCard = (custom: CustomAudio) => {
+    const cardId = customCardId(custom)
+    const isSelected = selectedAudioId === cardId
+    const isPlaying = playingId === cardId
     return (
-      <div id="titleInstructions">
-        <ol>
-          <li>
-            <u>Select</u> notification audio
-          </li>
-          <li>
-            <u>Refresh</u> WhatsApp web page
-          </li>
-          <li>Enjoy!</li>
-        </ol>
-        <p id="reset-audio-tip">
-          To reset audio to default, please clear the browser cache.
-        </p>
-      </div>
+      <li key={custom.id} className={cardClass(isSelected, isPlaying)}>
+        <div className="sound-card__main">
+          <span className="sound-card__emoji" aria-hidden="true">
+            🎵
+          </span>
+          <span className="sound-card__name" title={custom.displayName}>
+            {custom.displayName}
+          </span>
+          {isPlaying ? (
+            <span className="sound-card__bars" aria-hidden="true">
+              <i></i>
+              <i></i>
+              <i></i>
+              <i></i>
+            </span>
+          ) : isSelected ? (
+            <span className="sound-card__badge">PICKED</span>
+          ) : null}
+        </div>
+        <div className="sound-card__actions">
+          <button
+            type="button"
+            className="btn btn--play"
+            onClick={() => handlePlay(cardId, custom.dataUrl)}
+            aria-label={`Preview ${custom.displayName}`}
+            title="Preview"
+          >
+            ▶
+          </button>
+          <button
+            type="button"
+            className={`btn btn--select ${isSelected ? 'is-active' : ''}`}
+            onClick={() => handleSelectCustom(custom)}
+            disabled={isSelected}
+          >
+            {isSelected ? '✓ Picked' : 'Pick'}
+          </button>
+          <button
+            type="button"
+            className="btn btn--icon"
+            onClick={() => handleDeleteCustom(custom.id)}
+            aria-label={`Delete ${custom.displayName}`}
+            title="Delete"
+          >
+            ×
+          </button>
+        </div>
+      </li>
     )
   }
 
-  // const renderResetAudioButton = () => {
-  //   return (
-  //     <button
-  //       className="button"
-  //       onClick={() => handleResetAudio()}
-  //     >
-  //       Set audio to original
-  //     </button>
-  //   )
-  // }
+  const renderUploadCard = () => (
+    <li className="upload-card">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="audio/*"
+        onChange={handleUpload}
+        hidden
+        aria-label="Upload audio file"
+      />
+      <div className="upload-card__main">
+        <span className="upload-card__icon" aria-hidden="true">
+          ⬆
+        </span>
+        <div>
+          <strong>Upload your own</strong>
+          <p>MP3 or WAV · max 1 MB</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        className="btn btn--accent"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        Choose file
+      </button>
+    </li>
+  )
+
+  const renderList = () => {
+    if (activeTab === 'custom') {
+      return (
+        <ul className="sound-list">
+          {renderUploadCard()}
+          {uploadError && (
+            <li className="upload-error" role="alert">
+              {uploadError}
+            </li>
+          )}
+          {customAudios.length === 0 && !uploadError ? (
+            <li className="empty-msg">No custom sounds yet. Upload one above ↑</li>
+          ) : (
+            customAudios.map(renderCustomCard)
+          )}
+        </ul>
+      )
+    }
+    return <ul className="sound-list">{visibleBuiltIns.map(renderBuiltInCard)}</ul>
+  }
+
+  const renderInstructions = () => (
+    <div className="not-on-whatsapp">
+      <div className="not-on-whatsapp__emoji" aria-hidden="true">
+        📱
+      </div>
+      <h2>Open WhatsApp Web first</h2>
+      <p>
+        Head to <code>web.whatsapp.com</code> (or refresh it if you&apos;re
+        already there), then reopen this popup.
+      </p>
+    </div>
+  )
+
+  const renderIntro = () => (
+    <div className="intro">
+      <ol className="steps">
+        <li>
+          <span className="steps__num">1</span>
+          <span className="steps__label">Pick a sound</span>
+        </li>
+        <li>
+          <span className="steps__num">2</span>
+          <span className="steps__label">Refresh WhatsApp</span>
+        </li>
+        <li>
+          <span className="steps__num">3</span>
+          <span className="steps__label">Enjoy 🎉</span>
+        </li>
+      </ol>
+      <p className="reset-tip">
+        Tip: clear your browser cache to reset the default sound.
+      </p>
+    </div>
+  )
 
   return (
     <div className="App">
-      <img src={logo} className="App-logo" alt="logo" />
-      {isWhatsAppWeb && renderIntro()}
-      {isWhatsAppWeb ? renderAudioButtons() : renderInstructions()}
-      {/* {isWhatsAppWeb && renderResetAudioButton()} */}
-      <address>
-        <a id="get-in-touch" href="mailto:dzenk.lukas@gmail.com" target="_top">
-          {'>'}Get in touch{'<'}
+      <header className="App__header">
+        <img src={logo} className="App__logo" alt="WhatSound logo" />
+      </header>
+
+      {isWhatsAppWeb ? (
+        <>
+          {renderIntro()}
+          {renderTabs()}
+          {renderList()}
+        </>
+      ) : (
+        renderInstructions()
+      )}
+
+      <footer className="App__footer">
+        <a
+          className="footer-link"
+          href="mailto:dzenk.lukas@gmail.com"
+          target="_top"
+        >
+          ✉ get in touch
         </a>
-      </address>
+      </footer>
     </div>
   )
 }
@@ -211,25 +376,9 @@ const sendMessageToContentScript = async (
   openTab: number,
   messageObject: object
 ): Promise<{ [key: string]: string }> => {
-  console.log('sendMessageToContentScript called: ', openTab, messageObject)
-
   return new Promise((resolve) => {
     chrome.tabs.sendMessage(openTab, messageObject, resolve)
   })
-}
-
-// Volume slider
-{
-  /* <button className="button-volume">
-            <input
-              id="button-vol-input"
-              type="range"
-              min="0"
-              max="100"
-              step="0.1"
-              data-np-intersection-state="visible"
-            />
-          </button> */
 }
 
 export default Popup

@@ -20,6 +20,7 @@ const manifest: chrome.runtime.ManifestV3 = {
     default_popup: 'src/pages/popup/index.html',
     default_icon: 'assets/png/imgWhatsound_logo.chunk.png',
   },
+  permissions: ['storage'],
   // chrome_url_overrides: {
   //   newtab: "src/pages/newtab/index.html",
   // },

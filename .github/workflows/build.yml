@@ -12,11 +12,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          cache: 'yarn'
-      - run: yarn install
-      - run: yarn build:hmr
-      - run: yarn test
-      - run: yarn build
+          node-version: 20
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:hmr
+      - run: pnpm test
+      - run: pnpm build

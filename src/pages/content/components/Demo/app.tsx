@@ -1,3 +1,5 @@
+import { resolveAudioSource } from './audioSource'
+
 export default function App() {
   let extensionIdentifierUrl: string
 
@@ -29,11 +31,12 @@ export default function App() {
       asset?.url ||
       'https://web.whatsapp.com/notification_2a485d84012c106acef03b527bb54635.mp3'
 
-    const extensionAudioResponse = await fetch(
-      // remove '/' from the end of URL because it is already
-      // present in the beginning of selectedAudioUrl
-      extensionIdentifierUrl.slice(0, -1) + selectedAudioUrl
+    const sourceUrl = resolveAudioSource(
+      extensionIdentifierUrl,
+      selectedAudioUrl
     )
+
+    const extensionAudioResponse = await fetch(sourceUrl)
 
     const body = extensionAudioResponse.body
 
