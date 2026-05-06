@@ -2,6 +2,7 @@ import {
   MAX_UPLOAD_BYTES,
   TABS,
   buildCustomAudio,
+  buildFreesoundAudio,
   builtInAudios,
   customCardId,
   customIdFromCardId,
@@ -73,13 +74,18 @@ describe('audioLibrary', () => {
       expect(new Set(ids).size).toBe(ids.length)
     })
 
-    test('every non-top, non-custom tab matches a real category', () => {
+    test('every category tab (excluding top/browse/custom) maps to real built-ins', () => {
+      const externalTabs = new Set(['top', 'browse', 'custom'])
       const categories = TABS.map((t) => t.id).filter(
-        (id) => id !== 'top' && id !== 'custom'
+        (id) => !externalTabs.has(id)
       )
       for (const cat of categories) {
         expect(filterBuiltIns(builtInAudios, cat).length).toBeGreaterThan(0)
       }
+    })
+
+    test('browse tab returns empty (results come from the Freesound API)', () => {
+      expect(filterBuiltIns(builtInAudios, 'browse')).toEqual([])
     })
   })
 
@@ -174,6 +180,49 @@ describe('audioLibrary', () => {
       expect(item.mime).toBe('audio/wav')
       expect(item.addedAt).toBe(555)
       expect(item.sizeBytes).toBe(9999)
+    })
+  })
+
+  describe('buildFreesoundAudio', () => {
+    test('tags the item with a freesound:<id> source string', () => {
+      const item = buildFreesoundAudio({
+        freesoundId: 12345,
+        name: 'Notification ding',
+        dataUrl: 'data:audio/mpeg;base64,abc',
+        mime: 'audio/mpeg',
+        sizeBytes: 8000,
+        now: 1700000000000,
+        id: 'fixed',
+      })
+      expect(item).toEqual({
+        id: 'fixed',
+        displayName: 'Notification ding',
+        dataUrl: 'data:audio/mpeg;base64,abc',
+        mime: 'audio/mpeg',
+        addedAt: 1700000000000,
+        sizeBytes: 8000,
+        source: 'freesound:12345',
+      })
+    })
+
+    test('clamps long names to 60 chars and falls back to a default', () => {
+      const long = buildFreesoundAudio({
+        freesoundId: 1,
+        name: 'a'.repeat(200),
+        dataUrl: 'data:',
+        mime: 'audio/mpeg',
+        sizeBytes: 1,
+      })
+      expect(long.displayName.length).toBe(60)
+
+      const empty = buildFreesoundAudio({
+        freesoundId: 2,
+        name: '',
+        dataUrl: 'data:',
+        mime: 'audio/mpeg',
+        sizeBytes: 1,
+      })
+      expect(empty.displayName).toBe('Freesound clip')
     })
   })
 

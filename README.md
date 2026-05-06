@@ -67,6 +67,12 @@ Typescript.
    5. Select - `dist` folder in this project (after dev or build)
 6. If you want to build in production, just run `pnpm build`.
 
+The **Browse** tab searches the [Freesound](https://freesound.org/) library
+(~500k CC-licensed clips) using the project's pre-configured API token. If
+you fork this extension and want your own quota, replace the `API_KEY`
+constant in `src/pages/popup/freesound.ts` with a token from
+<https://freesound.org/apiv2/apply/>.
+
 ## Screenshots <a name="screenshots"></a>
 
 ### New Tab <a name="newtab"></a>

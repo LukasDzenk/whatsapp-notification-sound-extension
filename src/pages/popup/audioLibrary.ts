@@ -9,7 +9,7 @@ import some_notification_4 from '@assets/audio/4.mp3'
 import harp_5 from '@assets/audio/5.mp3'
 
 export type SoundCategory = 'alerts' | 'chill' | 'playful'
-export type LibraryTab = 'top' | SoundCategory | 'custom'
+export type LibraryTab = 'top' | SoundCategory | 'browse' | 'custom'
 
 export type BuiltInAudio = {
   displayName: string
@@ -26,6 +26,10 @@ export type CustomAudio = {
   mime: string
   addedAt: number
   sizeBytes: number
+  // Optional provenance — set for items pulled from an external library
+  // (e.g. `freesound:12345`) so the UI can mark a search result as already
+  // added.
+  source?: string
 }
 
 export const builtInAudios: BuiltInAudio[] = [
@@ -78,6 +82,7 @@ export const TABS: { id: LibraryTab; label: string; emoji: string }[] = [
   { id: 'alerts', label: 'Alerts', emoji: '🫧' },
   { id: 'chill', label: 'Chill', emoji: '🎵' },
   { id: 'playful', label: 'Fun', emoji: '🎉' },
+  { id: 'browse', label: 'Browse', emoji: '🔎' },
   { id: 'custom', label: 'Mine', emoji: '⬆' },
 ]
 
@@ -88,7 +93,7 @@ export const filterBuiltIns = (
   tab: LibraryTab
 ): BuiltInAudio[] => {
   if (tab === 'top') return audios.filter((a) => a.top)
-  if (tab === 'custom') return []
+  if (tab === 'custom' || tab === 'browse') return []
   return audios.filter((a) => a.category === tab)
 }
 
@@ -138,5 +143,26 @@ export const buildCustomAudio = (
     mime: file.type,
     addedAt: now,
     sizeBytes: file.size,
+  }
+}
+
+export const buildFreesoundAudio = (input: {
+  freesoundId: number
+  name: string
+  dataUrl: string
+  mime: string
+  sizeBytes: number
+  now?: number
+  id?: string
+}): CustomAudio => {
+  const cleanedName = input.name.slice(0, 60) || 'Freesound clip'
+  return {
+    id: input.id ?? generateCustomId(),
+    displayName: cleanedName,
+    dataUrl: input.dataUrl,
+    mime: input.mime,
+    addedAt: input.now ?? Date.now(),
+    sizeBytes: input.sizeBytes,
+    source: `freesound:${input.freesoundId}`,
   }
 }

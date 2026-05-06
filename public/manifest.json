@@ -10,6 +10,10 @@
   "permissions": [
     "storage"
   ],
+  "host_permissions": [
+    "https://freesound.org/*",
+    "https://*.freesound.org/*"
+  ],
   "content_scripts": [
     {
       "matches": [

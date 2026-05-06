@@ -5,29 +5,25 @@ $pink-soft: #ffe6f0;
 $green: #7fae71;
 $green-dark: #5a8d4d;
 $yellow: #fff6ce;
+$yellow-warm: #ffefb0;
 $purple: #907fcd;
 $cream: #fff8ee;
 $white: #ffffff;
 $muted: #6b6b6b;
 
-$radius: 12px;
-$radius-sm: 8px;
+$radius: 14px;
+$radius-sm: 10px;
 $border: 2px solid $ink;
 $border-thin: 1.5px solid $ink;
-$shadow: 4px 4px 0 $ink;
+$shadow: 3px 3px 0 $ink;
 $shadow-sm: 2px 2px 0 $ink;
 $transition: transform 0.12s ease, box-shadow 0.12s ease,
   background-color 0.18s ease, color 0.18s ease;
 
-// ---- Mixins ----------------------------------------------------------------
-@mixin lift {
-  &:hover:not(:disabled) {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 $ink;
-  }
-  &:active:not(:disabled) {
-    transform: translate(2px, 2px);
-    box-shadow: 0 0 0 $ink;
+@mixin lift-card {
+  &:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 $ink;
   }
 }
 
@@ -35,14 +31,15 @@ $transition: transform 0.12s ease, box-shadow 0.12s ease,
   box-sizing: border-box;
 }
 
-// ---- Layout ----------------------------------------------------------------
 body {
-  width: 320px;
+  width: 360px;
   margin: 0;
-  background: $pink;
+  background: $cream;
   color: $ink;
-  font-family: 'Roboto', 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+  font-family: 'Inter', 'Roboto', system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
+  font-feature-settings: 'cv02', 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
 }
 
 body,
@@ -52,97 +49,71 @@ html {
   overflow: auto;
 }
 
+// ---- App layout ------------------------------------------------------------
 .App {
-  padding: 16px 14px 12px;
+  padding: 18px 16px 14px;
 
   &__header {
     display: flex;
-    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: $border-thin;
     margin-bottom: 14px;
   }
 
-  &__logo {
-    height: 96px;
-    border-radius: $radius;
-    border: $border;
-    box-shadow: $shadow;
-    background: $pink-soft;
-    transition: $transition;
-    cursor: pointer;
-    @include lift;
+  &__mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: $border-thin;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__name {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+
+  &__tagline {
+    margin: 3px 0 0;
+    font-size: 0.74rem;
+    color: $muted;
+    line-height: 1.3;
+  }
+
+  &__main {
+    display: flex;
+    flex-direction: column;
   }
 
   &__footer {
     display: flex;
     justify-content: center;
     margin-top: 18px;
+    padding-top: 12px;
+    border-top: $border-thin;
   }
-}
-
-// ---- Intro / Steps ---------------------------------------------------------
-.intro {
-  margin-bottom: 14px;
-}
-
-.steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  list-style: none;
-  padding: 0;
-  margin: 0 0 6px;
-
-  li {
-    background: $white;
-    border: $border;
-    border-radius: $radius-sm;
-    box-shadow: $shadow-sm;
-    padding: 8px 4px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-
-  &__num {
-    width: 22px;
-    height: 22px;
-    background: $green;
-    color: $white;
-    border: $border-thin;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 800;
-    line-height: 1;
-  }
-
-  &__label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    line-height: 1.15;
-  }
-}
-
-.reset-tip {
-  font-size: 0.65rem;
-  font-style: italic;
-  color: $muted;
-  text-align: center;
-  margin: 8px 0 0;
 }
 
 // ---- Tabs ------------------------------------------------------------------
 .tabs {
   display: flex;
   gap: 6px;
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding-bottom: 4px;
+  padding: 2px;
 
   &::-webkit-scrollbar {
     display: none;
@@ -158,7 +129,7 @@ html {
   letter-spacing: 0.04em;
   border: $border-thin;
   border-radius: 999px;
-  padding: 5px 10px;
+  padding: 6px 11px;
   background: $white;
   color: $ink;
   box-shadow: $shadow-sm;
@@ -166,12 +137,12 @@ html {
   transition: $transition;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   white-space: nowrap;
 
   &:hover {
     transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0 $ink;
+    box-shadow: 3px 3px 0 $ink;
   }
 
   &.is-active {
@@ -184,7 +155,7 @@ html {
   }
 }
 
-// ---- Sound cards -----------------------------------------------------------
+// ---- Sound list ------------------------------------------------------------
 .sound-list {
   list-style: none;
   padding: 0;
@@ -194,54 +165,54 @@ html {
   gap: 10px;
 }
 
+// ---- Sound card ------------------------------------------------------------
 .sound-card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  align-items: stretch;
   background: $white;
   border: $border;
   border-radius: $radius;
   box-shadow: $shadow;
-  padding: 10px 12px;
+  overflow: hidden;
   transition: $transition;
-
-  &:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 5px 5px 0 $ink;
-  }
+  @include lift-card;
 
   &.is-selected {
     background: $green;
+  }
+
+  &.is-selected &__select {
     color: $white;
-
-    .sound-card__name {
-      color: $white;
-    }
-    .sound-card__bars i {
-      background: $white;
-    }
-    .sound-card__badge {
-      background: $ink;
-      color: $yellow;
-    }
   }
 
-  &.is-playing {
-    background: $yellow;
-  }
-
-  &__main {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  &__select {
     flex: 1;
     min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 14px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: $ink;
+    font-family: inherit;
+    transition: color 0.18s ease;
   }
 
   &__emoji {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     line-height: 1;
+    flex-shrink: 0;
+  }
+
+  &__text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
   }
 
   &__name {
@@ -250,22 +221,81 @@ html {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    letter-spacing: -0.005em;
   }
 
-  &__badge {
-    font-size: 0.55rem;
+  &__meta {
+    font-size: 0.7rem;
+    color: $muted;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__check {
+    font-size: 0.72rem;
     font-weight: 800;
-    letter-spacing: 0.05em;
     background: $ink;
     color: $yellow;
-    padding: 2px 6px;
-    border-radius: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    &--add {
+      background: $green;
+      color: $white;
+      font-size: 0.95rem;
+    }
+
+    &--spin {
+      background: $white;
+      color: $ink;
+      font-size: 0.85rem;
+    }
   }
 
-  &__actions {
-    display: flex;
-    gap: 6px;
+  &.is-selected &__meta {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  &__play,
+  &__delete {
     flex-shrink: 0;
+    border: none;
+    border-left: $border-thin;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    color: $ink;
+    transition: background-color 0.15s ease;
+  }
+
+  &__play {
+    background: $yellow;
+    width: 46px;
+    font-size: 0.95rem;
+
+    &:hover {
+      background: $yellow-warm;
+    }
+  }
+
+  &__delete {
+    background: $white;
+    width: 36px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1;
+
+    &:hover {
+      background: #f5f5f5;
+    }
   }
 
   &__bars {
@@ -308,98 +338,62 @@ html {
   }
 }
 
-// ---- Buttons ---------------------------------------------------------------
-.btn {
-  font-family: inherit;
-  font-weight: 700;
-  font-size: 0.72rem;
-  border: $border-thin;
-  border-radius: $radius-sm;
-  padding: 6px 10px;
-  cursor: pointer;
-  background: $white;
-  color: $ink;
-  box-shadow: $shadow-sm;
-  transition: $transition;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  @include lift;
-
-  &:disabled {
-    cursor: default;
-    opacity: 1;
-  }
-
-  &--play {
-    background: $yellow;
-    width: 36px;
-    padding: 6px 0;
-    font-size: 0.8rem;
-  }
-
-  &--select {
-    background: $purple;
-    color: $white;
-    min-width: 72px;
-  }
-
-  &--select.is-active {
-    background: $ink;
-    color: $green;
-  }
-
-  &--icon {
-    background: $white;
-    width: 28px;
-    padding: 4px 0;
-    font-size: 1rem;
-    font-weight: 800;
-    line-height: 1;
-  }
-}
-
-// ---- Upload card / Custom tab ----------------------------------------------
+// ---- Upload card -----------------------------------------------------------
 .upload-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: $yellow;
+  background: $pink-soft;
   border: $border;
   border-radius: $radius;
-  box-shadow: $shadow-sm;
-  padding: 10px 12px;
-  gap: 10px;
+  box-shadow: $shadow;
+  overflow: hidden;
+  transition: $transition;
+  @include lift-card;
 
-  &__main {
+  &__button {
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex: 1;
-    min-width: 0;
+    gap: 12px;
+    padding: 12px 14px;
+    font-family: inherit;
+    color: $ink;
+    text-align: left;
   }
 
   &__icon {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     border: $border-thin;
-    border-radius: 8px;
     background: $white;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 800;
+    font-weight: 900;
+    font-size: 1.3rem;
     flex-shrink: 0;
+    line-height: 1;
+  }
+
+  &__label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
   }
 
   strong {
-    font-size: 0.9rem;
-    display: block;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: -0.005em;
   }
 
-  p {
-    margin: 2px 0 0;
+  &__hint {
     font-size: 0.7rem;
     color: $muted;
+    line-height: 1.3;
   }
 }
 
@@ -407,7 +401,7 @@ html {
   background: #ffd3d3;
   border: $border-thin;
   border-radius: $radius-sm;
-  padding: 8px 10px;
+  padding: 9px 12px;
   font-size: 0.78rem;
   font-weight: 600;
   color: #800;
@@ -417,14 +411,219 @@ html {
   text-align: center;
   font-size: 0.8rem;
   color: $muted;
-  padding: 16px 8px;
+  padding: 20px 8px 12px;
   font-style: italic;
 }
 
-// Reuse btn--accent for the file picker
-.btn--accent {
-  background: $yellow;
+// ---- Browse (Freesound) panel ---------------------------------------------
+.browse-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: $white;
+  border: $border;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 0 12px;
+
+  &__icon {
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    margin-right: 8px;
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 11px 0;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $ink;
+
+    &::placeholder {
+      color: $muted;
+      font-weight: 500;
+    }
+  }
+
+  &__clear {
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: $muted;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px 6px;
+
+    &:hover {
+      color: $ink;
+    }
+  }
+}
+
+.browse-suggestions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.72rem;
+
+  &__label {
+    color: $muted;
+    font-weight: 600;
+  }
+}
+
+.suggestion-chip {
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: $border-thin;
+  border-radius: 999px;
+  padding: 3px 9px;
+  background: $white;
   color: $ink;
+  cursor: pointer;
+  transition: $transition;
+
+  &:hover {
+    background: $yellow;
+    transform: translate(-1px, -1px);
+    box-shadow: 2px 2px 0 $ink;
+  }
+}
+
+.browse-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px 8px;
+  font-size: 0.82rem;
+  color: $muted;
+  font-weight: 500;
+  text-align: center;
+
+  &--error {
+    color: #c0392b;
+    font-weight: 600;
+  }
+
+  &__spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid $ink;
+    border-top-color: transparent;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.browse-empty {
+  text-align: center;
+  background: $white;
+  border: $border;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 22px 16px;
+
+  &__emoji {
+    font-size: 2rem;
+    margin-bottom: 8px;
+  }
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 0.95rem;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: $muted;
+    line-height: 1.45;
+  }
+
+  code {
+    background: $yellow;
+    border: $border-thin;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.74rem;
+    font-family: inherit;
+    font-weight: 700;
+  }
+
+  a {
+    color: $ink;
+    font-weight: 700;
+  }
+}
+
+.browse-attribution {
+  margin: 4px 0 0;
+  font-size: 0.68rem;
+  color: $muted;
+  text-align: center;
+  line-height: 1.4;
+
+  a {
+    color: $ink;
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// ---- Refresh hint banner ---------------------------------------------------
+.refresh-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: $yellow;
+  border: $border;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $ink;
+  line-height: 1.35;
+
+  &__icon {
+    font-size: 0.95rem;
+    font-weight: 800;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: $ink;
+    color: $yellow;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
 }
 
 // ---- Empty / Not-on-whatsapp state -----------------------------------------
@@ -434,49 +633,52 @@ html {
   border: $border;
   border-radius: $radius;
   box-shadow: $shadow;
-  padding: 22px 16px;
-  margin: 18px 0;
+  padding: 28px 20px;
+  margin: 6px 0 4px;
 
   &__emoji {
-    font-size: 2.4rem;
-    margin-bottom: 6px;
+    font-size: 2.6rem;
+    margin-bottom: 8px;
   }
 
   h2 {
-    font-size: 0.95rem;
-    margin: 4px 0;
+    font-size: 1rem;
+    margin: 4px 0 8px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
   }
 
   p {
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     color: $muted;
-    margin: 6px 0 0;
-    line-height: 1.4;
+    margin: 0;
+    line-height: 1.5;
   }
 
   code {
     background: $yellow;
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-size: 0.75rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.78rem;
     border: $border-thin;
+    font-family: inherit;
+    font-weight: 700;
   }
 }
 
-// ---- Footer ----------------------------------------------------------------
+// ---- Footer link -----------------------------------------------------------
 .footer-link {
   display: inline-block;
-  background: $white;
-  border: $border-thin;
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: $ink;
+  color: $muted;
   text-decoration: none;
-  box-shadow: $shadow-sm;
-  transition: $transition;
-  @include lift;
+  letter-spacing: 0.02em;
+
+  &:hover {
+    color: $ink;
+    text-decoration: underline;
+  }
 }
 
 // ---- Custom scrollbar ------------------------------------------------------
@@ -498,15 +700,15 @@ html {
 .brutalist-scrollbar {
   &::-webkit-scrollbar {
     width: 12px;
-    background-color: $pink;
+    background-color: $cream;
   }
   &::-webkit-scrollbar-thumb {
     background-color: $ink;
-    border: 3px solid $pink;
+    border: 3px solid $cream;
     border-radius: 0;
   }
   &::-webkit-scrollbar-track {
-    background-color: $pink;
+    background-color: $cream;
     border-left: 1px solid $ink;
   }
 }

@@ -94,11 +94,11 @@ describe('Popup', () => {
     expect(screen.queryByText('Pop')).toBeNull()
   })
 
-  test('clicking Pick sends an updateCachedAudio message to the content script', async () => {
+  test('clicking a sound card sends an updateCachedAudio message to the content script', async () => {
     await renderPopup()
 
-    const pickButtons = screen.getAllByRole('button', { name: /^pick$/i })
-    fireEvent.click(pickButtons[0])
+    // Each sound card is itself a button labelled by the sound name.
+    fireEvent.click(screen.getByRole('button', { name: /^pop$/i }))
 
     await waitFor(() => {
       const sendMessage = (
@@ -118,12 +118,21 @@ describe('Popup', () => {
     })
   })
 
+  test('selecting a sound surfaces the refresh-WhatsApp hint', async () => {
+    await renderPopup()
+    expect(screen.queryByText(/refresh whatsapp web/i)).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /^pop$/i }))
+
+    expect(screen.getByText(/refresh whatsapp web/i)).toBeTruthy()
+  })
+
   test('Mine tab shows the upload card and the empty-state hint', async () => {
     await renderPopup()
 
     fireEvent.click(screen.getByRole('button', { name: /mine/i }))
 
-    expect(screen.getByText(/upload your own/i)).toBeTruthy()
+    expect(screen.getByText(/add your own sound/i)).toBeTruthy()
     expect(screen.getByText(/no custom sounds yet/i)).toBeTruthy()
   })
 })

@@ -8,8 +8,12 @@
 /dist
 *.zip
 
+# downloaded fonts cache for asset generators
+/scripts/.fonts
+
 # etc
 .DS_Store
+.env
 .env.local
 .idea
 
