@@ -9,28 +9,27 @@ const manifest: chrome.runtime.ManifestV3 = {
   name: 'WhatSound - Change WhatsApp message sound',
   version: packageJson.version,
   description: packageJson.description,
-  // options_page: "src/pages/options/index.html",
-  // background: { service_worker: "src/pages/background/index.js" },
-  // icons: {
-  //   '16': 'assets/png/imgWhatsound_logo.chunk.png',
-  //   '48': 'assets/png/imgWhatsound_logo.chunk.png',
-  //   '128': 'assets/png/imgWhatsound_logo.chunk.png',
-  // },
+  // Icons live in `public/icons/` and are copied verbatim to dist root by
+  // Vite, giving the manifest stable paths that don't depend on the bundler's
+  // hashing/renaming of imported assets.
+  icons: {
+    '16': 'icons/icon-16.png',
+    '48': 'icons/icon-48.png',
+    '128': 'icons/icon-128.png',
+  },
   action: {
     default_popup: 'src/pages/popup/index.html',
-    default_icon: 'assets/png/imgWhatsound_logo.chunk.png',
+    default_icon: {
+      '16': 'icons/icon-16.png',
+      '48': 'icons/icon-48.png',
+      '128': 'icons/icon-128.png',
+    },
   },
   permissions: ['storage'],
   host_permissions: [
     'https://freesound.org/*',
     'https://*.freesound.org/*',
   ],
-  // chrome_url_overrides: {
-  //   newtab: "src/pages/newtab/index.html",
-  // },
-  // icons: {
-  //   '128': 'icon-128.png',
-  // },
   content_scripts: [
     {
       matches: ['https://web.whatsapp.com/*'],

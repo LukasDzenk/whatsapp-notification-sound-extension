@@ -18,7 +18,9 @@ import { loadInterFonts } from './fonts.ts'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
-const OUT_DIR = resolve(ROOT, 'src/assets/img')
+// `src/assets/img` feeds the bundled popup logo import; `public/icons` is
+// copied verbatim into the dist root and is what the manifest references.
+const OUT_DIRS = [resolve(ROOT, 'src/assets/img'), resolve(ROOT, 'public/icons')]
 
 const PINK = '#ffd4e5'
 const INK = '#1a1a1a'
@@ -52,7 +54,7 @@ const SVG = `
 `
 
 async function main() {
-  await mkdir(OUT_DIR, { recursive: true })
+  for (const dir of OUT_DIRS) await mkdir(dir, { recursive: true })
   const fonts = await loadInterFonts()
 
   const resvg = new Resvg(SVG, {
@@ -65,18 +67,22 @@ async function main() {
   })
 
   const png128 = resvg.render().asPng()
-  const path128 = resolve(OUT_DIR, 'icon-128.png')
-  await writeFile(path128, png128)
-  console.log(`wrote ${path128.replace(ROOT + '/', '')}  (128x128)`)
+  for (const dir of OUT_DIRS) {
+    const path128 = resolve(dir, 'icon-128.png')
+    await writeFile(path128, png128)
+    console.log(`wrote ${path128.replace(ROOT + '/', '')}  (128x128)`)
+  }
 
   for (const size of [48, 16]) {
     const buf = await sharp(png128)
       .resize(size, size, { kernel: 'lanczos3' })
       .png({ compressionLevel: 9 })
       .toBuffer()
-    const path = resolve(OUT_DIR, `icon-${size}.png`)
-    await writeFile(path, buf)
-    console.log(`wrote ${path.replace(ROOT + '/', '')}  (${size}x${size})`)
+    for (const dir of OUT_DIRS) {
+      const path = resolve(dir, `icon-${size}.png`)
+      await writeFile(path, buf)
+      console.log(`wrote ${path.replace(ROOT + '/', '')}  (${size}x${size})`)
+    }
   }
 }
 
