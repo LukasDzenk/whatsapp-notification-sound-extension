@@ -50,8 +50,6 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "assets/js/*.js",
-        "assets/css/*.css",
         "assets/mp3/*.mp3",
         "assets/wav/*.wav"
       ],

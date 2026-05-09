@@ -54,14 +54,14 @@ const manifest: chrome.runtime.ManifestV3 = {
     },
   ],
   // devtools_page: "src/pages/devtools/index.html",
+  // The audio assets are the only thing whatsapp.com needs to reach: the
+  // isolated content script fetches them via `chrome-extension://<id>/...`
+  // and forwards the bytes to the main-world hook. Everything else (popup
+  // scripts, popup CSS, content-script CSS auto-injected via manifest)
+  // stays inside the extension origin.
   web_accessible_resources: [
     {
-      resources: [
-        'assets/js/*.js',
-        'assets/css/*.css',
-        'assets/mp3/*.mp3',
-        'assets/wav/*.wav',
-      ],
+      resources: ['assets/mp3/*.mp3', 'assets/wav/*.wav'],
       matches: ['https://web.whatsapp.com/*'],
     },
   ],
