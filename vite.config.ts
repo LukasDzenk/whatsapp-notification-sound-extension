@@ -32,6 +32,9 @@ export default defineConfig({
     customDynamicImport(),
     addHmr({ background: enableHmrInBackgroundScript, view: true }),
   ],
+  define: {
+    __WHATSOUND_DEV__: JSON.stringify(isDev),
+  },
   publicDir,
   build: {
     outDir,
@@ -49,6 +52,7 @@ export default defineConfig({
         popup: resolve(pagesDir, 'popup', 'index.html'),
         newtab: resolve(pagesDir, 'newtab', 'index.html'),
         options: resolve(pagesDir, 'options', 'index.html'),
+        upload: resolve(pagesDir, 'upload', 'index.html'),
       },
       watch: {
         include: ['src/**', 'vite.config.ts'],

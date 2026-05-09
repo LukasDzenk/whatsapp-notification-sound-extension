@@ -5,18 +5,16 @@ import logo from '@assets/img/icon-128.png'
 import '@pages/popup/Popup.scss'
 
 // Other
-import { ChangeEvent, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   BuiltInAudio,
   CustomAudio,
   LibraryTab,
   TABS,
-  buildCustomAudio,
   buildFreesoundAudio,
   builtInAudios,
   customCardId,
   filterBuiltIns,
-  validateUpload,
 } from '@pages/popup/audioLibrary'
 import {
   FREESOUND_HOMEPAGE,
@@ -25,13 +23,7 @@ import {
   formatDuration,
   searchFreesound,
 } from '@pages/popup/freesound'
-
-type SelectedAudio = {
-  cardId: string
-  src: string
-  name?: string
-  updatedAt: number
-}
+import { SelectedAudio } from '@src/lib/audio'
 
 type CardConfig = {
   cardId: string
@@ -62,7 +54,6 @@ const Popup = () => {
   const [addingFreesoundId, setAddingFreesoundId] = useState<number | null>(null)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     chrome.storage?.local.get(['selectedAudio', 'customAudios'], (result) => {
@@ -103,6 +94,30 @@ const Popup = () => {
       localStorage.removeItem('selectedAudioUrl')
     })
 
+    // Sync `customAudios` while the popup is open. The upload page writes
+    // to `chrome.storage.local` from a separate window, so without this
+    // listener the popup wouldn't reflect uploads done from there until
+    // it was reopened.
+    const onStorageChange = (
+      changes: { [k: string]: chrome.storage.StorageChange },
+      area: string
+    ) => {
+      if (area !== 'local') return
+      if (changes.customAudios) {
+        const next = Array.isArray(changes.customAudios.newValue)
+          ? (changes.customAudios.newValue as CustomAudio[])
+          : []
+        setCustomAudios(next)
+      }
+      if (changes.selectedAudio) {
+        const next = changes.selectedAudio.newValue as
+          | SelectedAudio
+          | undefined
+        setSelectedAudioId(next?.cardId ?? '')
+      }
+    }
+    chrome.storage?.onChanged.addListener(onStorageChange)
+
     const checkIsWhatsAppWeb = async () => {
       const openTabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) =>
@@ -122,6 +137,10 @@ const Popup = () => {
       }
     }
     checkIsWhatsAppWeb()
+
+    return () => {
+      chrome.storage?.onChanged.removeListener(onStorageChange)
+    }
   }, [])
 
   // Debounced Freesound search whenever the Browse tab's query changes.
@@ -208,26 +227,51 @@ const Popup = () => {
     audio.play().catch(() => setPlayingId(null))
   }
 
-  const handleUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  /**
+   * Reset to WhatsApp's original notification sound and wipe everything
+   * the extension has ever written:
+   *   - clears `selectedAudio` and `customAudios` from chrome.storage,
+   *   - tells the content script to (a) purge any leftover cache entries
+   *     a previous extension version may have seeded into WA's `wa_*`
+   *     Cache Storage and (b) revert each tracked `<audio>` element to
+   *     the URL WA originally gave it, so the next play uses the default
+   *     sound without requiring a page reload.
+   */
+  const handleResetToDefault = () => {
+    setSelectedAudioId('')
+    setCustomAudios([])
     setUploadError(null)
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
+    chrome.storage?.local.remove(['selectedAudio', 'customAudios'])
 
-    const error = validateUpload(file)
-    if (error) {
-      setUploadError(error)
-      return
+    if (openTabId) {
+      sendMessageToContentScript(openTabId, { type: 'resetAudio' })
     }
+  }
 
-    const reader = new FileReader()
-    reader.onload = () => {
-      const dataUrl = String(reader.result || '')
-      const item = buildCustomAudio(file, dataUrl)
-      persistCustomAudios([item, ...customAudios])
+  /**
+   * Open the dedicated upload page in a separate browser window. We can't
+   * do the file pick inside the popup itself: on Windows/Linux Chrome
+   * blurs and auto-closes the action popup the moment the OS file dialog
+   * appears, so the input's `change` listener disappears with the DOM
+   * before the user can pick anything. The upload page lives in its own
+   * window where the file dialog is harmless, and it writes back to
+   * `chrome.storage.local` — the popup's storage listener picks the new
+   * sound up next time it's open.
+   */
+  const handleOpenUpload = () => {
+    setUploadError(null)
+    const url = chrome.runtime.getURL('src/pages/upload/index.html')
+    if (chrome.windows?.create) {
+      chrome.windows.create({
+        url,
+        type: 'popup',
+        width: 460,
+        height: 420,
+      })
+    } else {
+      // Fallback for the rare case windows API isn't available.
+      chrome.tabs?.create({ url })
     }
-    reader.onerror = () => setUploadError('Could not read that file.')
-    reader.readAsDataURL(file)
   }
 
   const handleDeleteCustom = (id: string) => {
@@ -367,18 +411,10 @@ const Popup = () => {
 
   const renderUploadCard = () => (
     <li className="upload-card">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="audio/*"
-        onChange={handleUpload}
-        hidden
-        aria-label="Upload audio file"
-      />
       <button
         type="button"
         className="upload-card__button"
-        onClick={() => fileInputRef.current?.click()}
+        onClick={handleOpenUpload}
       >
         <span className="upload-card__icon" aria-hidden="true">
           +
@@ -624,7 +660,9 @@ const Popup = () => {
               <span className="refresh-hint__icon" aria-hidden="true">
                 ↻
               </span>
-              <span>Refresh WhatsApp Web to apply your new sound</span>
+              <span>
+                If the sound hasn’t changed yet, refresh WhatsApp Web.
+              </span>
             </div>
           )}
         </main>
@@ -633,6 +671,19 @@ const Popup = () => {
       )}
 
       <footer className="App__footer">
+        {isWhatsAppWeb && (
+          <button
+            type="button"
+            className="reset-button"
+            onClick={handleResetToDefault}
+            title="Reset to WhatsApp's original notification sound"
+          >
+            <span className="reset-button__icon" aria-hidden="true">
+              ↺
+            </span>
+            <span className="reset-button__label">Reset to default</span>
+          </button>
+        )}
         <a className="footer-link" href="mailto:dzenk.lukas@gmail.com">
           feedback
         </a>

@@ -31,10 +31,26 @@ const manifest: chrome.runtime.ManifestV3 = {
     'https://*.freesound.org/*',
   ],
   content_scripts: [
+    // Main-world hook FIRST: it must install its `Audio` / `src` / `fetch`
+    // patches before any other script runs, so it precedes the isolated
+    // content script in this list and uses `run_at: document_start`. The
+    // `world` field exists in MV3 but predates this @types/chrome, hence
+    // the cast. See public/mainWorldHook.js.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    {
+      matches: ['https://web.whatsapp.com/*'],
+      js: ['mainWorldHook.js'],
+      run_at: 'document_start',
+      world: 'MAIN',
+    } as any,
+    // Isolated content script: reads the user's selection from
+    // chrome.storage and forwards bytes to the main-world hook. Runs at
+    // document_start too so the first publish lands as early as possible.
     {
       matches: ['https://web.whatsapp.com/*'],
       js: ['src/pages/content/index.js'],
       css: ['assets/css/contentStyle.chunk.css'],
+      run_at: 'document_start',
     },
   ],
   // devtools_page: "src/pages/devtools/index.html",

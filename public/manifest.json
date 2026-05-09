@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WhatSound - Change WhatsApp message sound",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "WhatSound - Change WhatsApp Web notification sound",
   "icons": {
     "16": "icons/icon-16.png",
@@ -29,11 +29,22 @@
         "https://web.whatsapp.com/*"
       ],
       "js": [
+        "mainWorldHook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
         "src/pages/content/index.js"
       ],
       "css": [
         "assets/css/contentStyle.chunk.css"
-      ]
+      ],
+      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [

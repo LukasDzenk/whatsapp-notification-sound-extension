@@ -47,3 +47,7 @@ declare module '*.wav' {
   const content: string
   export default content
 }
+
+// Build-time flag injected by Vite (`define` in vite.config.ts).
+// True only when the extension is built via `pnpm dev` (__DEV__=true).
+declare const __WHATSOUND_DEV__: boolean

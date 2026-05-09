@@ -1,4 +1,4 @@
-import { resolveAudioSource } from './audioSource'
+import { resolveAudioSource } from './audio'
 
 describe('resolveAudioSource', () => {
   const EXT = 'chrome-extension://abcdef/'
@@ -11,7 +11,6 @@ describe('resolveAudioSource', () => {
 
   test('does not produce a double slash between origin and path', () => {
     const result = resolveAudioSource(EXT, '/assets/mp3/foo.mp3')
-    // No `//` after the protocol's `://`
     expect(result.split('://')[1]).not.toMatch(/\/\//)
   })
 

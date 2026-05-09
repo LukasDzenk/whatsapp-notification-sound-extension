@@ -100,6 +100,8 @@ html {
   &__footer {
     display: flex;
     justify-content: center;
+    align-items: center;
+    gap: 14px;
     margin-top: 18px;
     padding-top: 12px;
     border-top: $border-thin;
@@ -109,15 +111,10 @@ html {
 // ---- Tabs ------------------------------------------------------------------
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin: 0 0 14px;
-  overflow-x: auto;
-  scrollbar-width: none;
   padding: 2px;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
 }
 
 .tab {
@@ -669,15 +666,57 @@ html {
 // ---- Footer link -----------------------------------------------------------
 .footer-link {
   display: inline-block;
+  font-family: inherit;
   font-size: 0.72rem;
   font-weight: 600;
   color: $muted;
   text-decoration: none;
   letter-spacing: 0.02em;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
 
   &:hover {
     color: $ink;
     text-decoration: underline;
+  }
+}
+
+// ---- Reset button ----------------------------------------------------------
+.reset-button {
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: $ink;
+  background: $pink;
+  border: $border-thin;
+  border-radius: 999px;
+  padding: 5px 10px;
+  box-shadow: $shadow-sm;
+  cursor: pointer;
+  transition: $transition;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+
+  &:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 $ink;
+    background: $pink-soft;
+  }
+
+  &:active {
+    transform: translate(0, 0);
+    box-shadow: 1px 1px 0 $ink;
+  }
+
+  &__icon {
+    font-size: 0.85rem;
+    line-height: 1;
   }
 }
 
